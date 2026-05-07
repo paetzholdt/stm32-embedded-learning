@@ -1,0 +1,27 @@
+@startuml button_debounce_state_diagram
+
+state BUTTON {
+    [*] --> RELEASED_STABLE
+    state PRESSED_RAW
+    state PRESSED_STABLE
+    state RELEASED_RAW
+    state RELEASED_STABLE
+
+    RELEASED_STABLE --> RELEASED_STABLE : [!is_button_pressed]
+    RELEASED_STABLE --> PRESSED_RAW : [is_button_pressed] / start (new) timer
+    
+    PRESSED_RAW --> PRESSED_RAW : [is_button_pressed && !(timer > 20ms)]
+    PRESSED_RAW --> RELEASED_STABLE : [!is_button_pressed]
+    PRESSED_RAW --> PRESSED_STABLE : [is_button_pressed && (timer > 20 ms)] / toggle LED
+
+    PRESSED_STABLE --> PRESSED_STABLE : [is_button_pressed]
+    PRESSED_STABLE --> RELEASED_RAW : [!is_button_pressed] / start (new) timer
+    
+    RELEASED_RAW --> RELEASED_RAW : [!is_button_pressed && !(timer > 20ms)]
+    RELEASED_RAW --> PRESSED_STABLE : [is_button_pressed]
+    RELEASED_RAW --> RELEASED_STABLE : [!is_button_pressed && (timer > 20ms)]
+
+}
+
+
+@enduml
