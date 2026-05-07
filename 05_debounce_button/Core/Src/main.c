@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <stdbool.h>
 
 /* USER CODE END Includes */
 
@@ -56,6 +57,14 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+const uint32_t DEBOUNCE_TIME = 20; // ms
+
+typedef enum {
+	RELEASED_STABLE,
+	PRESSED_RAW,
+	PRESSED_STABLE,
+	RELEASED_RAW
+} ButtonState_t;
 
 /* USER CODE END 0 */
 
@@ -90,6 +99,11 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  uint32_t start_time_button_interaction = HAL_GetTick();
+  ButtonState_t button_state = RELEASED_STABLE;
+  bool is_button_pressed = false;
+  bool is_led_on = false;
+
 
   /* USER CODE END 2 */
 
@@ -97,6 +111,59 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // read, if button is pressed
+	  is_button_pressed = (HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_2) == GPIO_PIN_RESET); // true, if button pressed
+
+	  switch (button_state) {
+	  	  case RELEASED_STABLE:
+	  		  if (is_button_pressed) {
+	  			  start_time_button_interaction = HAL_GetTick();
+	  			  button_state = PRESSED_RAW;
+	  		  }
+	  		  break;
+
+
+
+	  	  case PRESSED_RAW:
+	  		  if (!is_button_pressed) {
+	  			  button_state = RELEASED_STABLE;
+	  			  break;
+	  		  }
+	  		  if ((HAL_GetTick() - start_time_button_interaction) > DEBOUNCE_TIME) {
+	  			  button_state = PRESSED_STABLE;
+	  			  if (!is_led_on) {
+	  				  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_SET);
+	  				  is_led_on = true;
+	  			  } else {
+	  				  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+	  				  is_led_on = false;
+	  			  }
+	  		  }
+	  		  break;
+
+
+
+	  	  case PRESSED_STABLE:
+	  		  if (!is_button_pressed) {
+	  			  start_time_button_interaction = HAL_GetTick();
+	  			  button_state = RELEASED_RAW;
+	  		  }
+	  		  break;
+
+
+
+	  	  case RELEASED_RAW:
+	  		  if (is_button_pressed) {
+	  			  button_state = PRESSED_STABLE;
+	  			  break;
+	  		  }
+
+	  		  if ((HAL_GetTick() - start_time_button_interaction) > DEBOUNCE_TIME) {
+	  			  button_state = RELEASED_STABLE;
+	  		  }
+	  		  break;
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
