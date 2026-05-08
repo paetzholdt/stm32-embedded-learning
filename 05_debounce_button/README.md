@@ -35,6 +35,9 @@ Docs/button_debounce_state_diagram.png
 - Push button connected to PC2
 - LED connected to PC3
 
+![Image LED_ON](Docs/images/01_LED_SET.jpeg)
+![Image LED_OFF](Docs/images/02_LED_RESET.jpeg)
+
 ## Software Architecture
 The application uses:
 - cyclic polling
