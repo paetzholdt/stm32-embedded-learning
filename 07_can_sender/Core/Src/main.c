@@ -108,7 +108,7 @@ int main(void)
   char output_text[128];
   uint32_t adc_value = 0;
   uint32_t duty_cycle_value = 0;
-  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1); // see CubeMX Timer -> Mode
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1); // see CubeMX Timer -> Mode
 
   /* USER CODE END 2 */
 
