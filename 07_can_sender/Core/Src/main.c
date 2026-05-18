@@ -21,6 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stdio.h"
+#include "string.h"
+#include "stdint.h"
 
 /* USER CODE END Includes */
 
@@ -55,10 +58,10 @@ UART_HandleTypeDef huart2;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_ADC1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_USART2_UART_Init(void);
+static void MX_ADC1_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -97,11 +100,15 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_ADC1_Init();
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_USART2_UART_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
+  char output_text[128];
+  uint32_t adc_value = 0;
+  uint32_t duty_cycle_value = 0;
+  HAL_TIMEx_PWMN_Start(&htim1, TIM_CHANNEL_1); // see CubeMX Timer -> Mode
 
   /* USER CODE END 2 */
 
@@ -109,6 +116,26 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_ADC_Start(&hadc1);
+	  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+	  adc_value = HAL_ADC_GetValue(&hadc1);
+	  HAL_ADC_Stop(&hadc1);
+
+
+	  // put Threshold at 500 -> LED can be turned off reliably
+	  if (adc_value < 500) {
+		  duty_cycle_value = 0;
+	  } else {
+		  duty_cycle_value = ((adc_value - 500) * 999) / (4095 - 500);
+	  }
+
+	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, duty_cycle_value);
+
+	  snprintf(output_text, sizeof(output_text), "ADC Value of Potentiometer: %lu, PWM: %lu\r\n", adc_value, duty_cycle_value);
+	  HAL_UART_Transmit(&huart2, (uint8_t*) output_text, strlen(output_text), HAL_MAX_DELAY);
+
+	  HAL_Delay(10);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -275,9 +302,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 15;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 999;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
